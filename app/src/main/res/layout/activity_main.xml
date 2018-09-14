@@ -210,8 +210,32 @@
             android:padding="5dp"
             android:text="0"
             android:textSize="16dp" />
+
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="5dp"
+            android:text="Pressure: "
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/tvPressure"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:padding="5dp"
+            android:text="0"
+            android:textSize="16dp" />
+
+    </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -226,6 +250,7 @@
             android:textColor="@color/colorPrimaryDark" />
 
         <EditText
+            android:enabled="false"
             android:id="@+id/edtWindowSize"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -269,6 +294,7 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvResult"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
@@ -278,12 +304,14 @@
     </LinearLayout>
 
     <TextView
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Wrong prediction? Select the best fit and submit!" />
 
 
     <RadioGroup
+        android:visibility="gone"
         android:id="@+id/rgAbove"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -320,6 +348,7 @@
     </RadioGroup>
 
     <RadioGroup
+        android:visibility="gone"
         android:id="@+id/rgBelow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -360,6 +389,7 @@
         android:orientation="horizontal">
 
         <Button
+            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Submit"
