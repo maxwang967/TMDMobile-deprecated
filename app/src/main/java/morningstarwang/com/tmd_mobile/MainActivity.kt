@@ -36,14 +36,15 @@ import java.io.FileWriter
 
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
+    var path = ""
     var mLAcc = ThreeAxesData(0f, 0f, 0f)
     var mGyr = ThreeAxesData(0f, 0f, 0f)
     var mMag = ThreeAxesData(0f, 0f, 0f)
     var mPressure = 0f
-    val mLAccList:MutableList<ThreeAxesData> = ArrayList()
-    val mGyrList:MutableList<ThreeAxesData> = ArrayList()
-    val mMagList:MutableList<ThreeAxesData> = ArrayList()
-    val mPressureList:MutableList<Float> = ArrayList()
+    val mLAccList: MutableList<ThreeAxesData> = ArrayList()
+    val mGyrList: MutableList<ThreeAxesData> = ArrayList()
+    val mMagList: MutableList<ThreeAxesData> = ArrayList()
+    val mPressureList: MutableList<Float> = ArrayList()
     var mSensorManager: SensorManager? = null
     var mLAccSensor: Sensor? = null
     var mGyrSensor: Sensor? = null
@@ -155,18 +156,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 //        if (!file.exists()) {
 //            file.mkdir()
 //        }
-        var mode = ""
-        when (realDataFlag) {
-            0 -> mode = "Still"
-            1 -> mode = "Walk"
-            2 -> mode = "Run"
-            3 -> mode = "Bike"
-            4 -> mode = "Car"
-            5 -> mode = "Bus"
-            6 -> mode = "Train"
-            7 -> mode = "Subway"
-        }
-//        saveFile = File(path, mode + "-" + timstamp + ".txt")
+
 
         when (event?.sensor?.type) {
             Sensor.TYPE_LINEAR_ACCELERATION -> {
@@ -194,7 +184,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         requestPermission()
-        initWriteData()
+//        initWriteData()
         initActionBar()
         wakeLocker()
         initSensors()
@@ -202,16 +192,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         initConfusionMatrix()
     }
 
-    private fun initWriteData() {
-        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
-        var mode = ""
-        path += "tmd_mobile/"
-        val file = File(path)
-        if (!file.exists()) {
-            file.mkdir()
-        }
-
-    }
+//    private fun initWriteData() {
+//        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
+//        var mode = ""
+//        path += "tmd_mobile/"
+//        val file = File(path)
+//        if (!file.exists()) {
+//            file.mkdir()
+//        }
+//
+//    }
 
     private fun requestPermission() {
         PermissionGen.with(this)
@@ -290,10 +280,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         override fun run() {
                             val currentPeriod = tvPeriod.text.toString().toInt()
                             val msg = Message()
-                            toast("mLAccList.size="+ mLAccList.size.toString())
-                            toast("mGyrList.size="+ mGyrList.size.toString())
-                            toast("mMagList.size="+ mMagList.size.toString())
-                            toast("mPressureList.size="+ mPressureList.size.toString())
+                            e("mLAccList.size=", mLAccList.size.toString())
+                            e("mGyrList.size=", mGyrList.size.toString())
+                            e("mMagList.size=", mMagList.size.toString())
+                            e("mPressureList.size=", mPressureList.size.toString())
                             msg.what = MSG_PERIOD
                             val objs: MutableList<Any> = ArrayList()
                             objs.add((currentPeriod + 1).toString())
@@ -345,20 +335,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             }
                             //Pressure
                             mPressureOK = true
-                        if (mPressureList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
-                            val savedPressureList: MutableList<Float> = ArrayList()
-                            for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
-                                savedPressureList.add(mPressureList[i])
+                            if (mPressureList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                                val savedPressureList: MutableList<Float> = ArrayList()
+                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                    savedPressureList.add(mPressureList[i])
+                                }
+                                mPressureList.clear()
+                                e("savedPressureList.size=", savedPressureList.size.toString())
+                                mPressureOK = true
+                                postPressureList = savedPressureList
                             }
-                            mPressureList.clear()
-                            e("savedPressureList.size=", savedPressureList.size.toString())
-                            mPressureOK = true
-                            postPressureList = savedPressureList
-                        }
                             if (mLAccOK && mMagOK && mGyrOK && mPressureOK) {//向服务器发送数据
                                 val postData = PostData(postLAccList, postGyrList, postMagList, postPressureList)
                                 val postDataJson = Gson().toJson(postData)
-
                                 objs.add(postDataJson)
                                 msg.obj = objs
                             }
@@ -369,7 +358,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
                 if (mTimer != null && mTimerTask != null) {
-                    mTimer!!.schedule(mTimerTask, 0, (1000 * edtWindowSize.text.toString().toFloat()).toLong())
+                    mTimer!!.schedule(mTimerTask, (1000 * edtWindowSize.text.toString().toFloat()).toLong(), (1000 * edtWindowSize.text.toString().toFloat()).toLong())
                 }
             } else {//停止预测
                 stopPredict()
@@ -416,6 +405,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             if (isChecked) {//开启数据采集
                 timstamp = System.currentTimeMillis()
+                path = Environment.getExternalStorageDirectory().absolutePath + "/"
+                path += "tmd_mobile/"
+                val file = File(path)
+                if (!file.exists()) {
+                    file.mkdir()
+                }
                 when {
                     rbStill.isChecked -> realDataFlag = 0
                     rbWalk.isChecked -> realDataFlag = 1
@@ -433,7 +428,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if (mDataTimerTask == null) {
                     mDataTimerTask = object : TimerTask() {
                         override fun run() {
-                            val mLAccAdd  = mLAcc.copy()
+                            val mLAccAdd = mLAcc.copy()
                             val mGyrAdd = mGyr.copy()
                             val mMagAdd = mMag.copy()
                             val mPressureAdd = mPressure
@@ -441,11 +436,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             mGyrList.add(mGyrAdd)
                             mMagList.add(mMagAdd)
                             mPressureList.add(mPressureAdd)
+                            val content = mLAccAdd.x.toString() + "," + mLAccAdd.y.toString() + "," + mLAccAdd.z.toString() + "," +
+                                        mGyrAdd.x.toString() + "," + mGyrAdd.y.toString() + "," + mGyrAdd.z.toString() + ","  +
+                                        mMagAdd.x.toString() + "," + mMagAdd.y.toString() + "," + mMagAdd.z.toString() + "," +
+                                        mPressureAdd.toString() + "\n"
+                            var mode = ""
+                            when (realDataFlag) {
+                                0 -> mode = "Still"
+                                1 -> mode = "Walk"
+                                2 -> mode = "Run"
+                                3 -> mode = "Bike"
+                                4 -> mode = "Car"
+                                5 -> mode = "Bus"
+                                6 -> mode = "Train"
+                                7 -> mode = "Subway"
+                            }
+                            saveFile = File(path, mode + "-" + timstamp + ".txt")
+                            outStream = FileWriter(saveFile, true)
+                            outStream!!.write(content)
+                            outStream!!.close()
                         }
                     }
                 }
                 if (mDataTimer != null && mDataTimerTask != null) {
-                    mDataTimer!!.schedule(mDataTimerTask, 0, 10)
+                    mDataTimer!!.schedule(mDataTimerTask, 0, 5)
                 }
             } else {//关闭数据采集
                 stopSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)
