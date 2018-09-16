@@ -1,17 +1,17 @@
 package morningstarwang.com.tmd_mobile
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.*
 import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.util.Log.e
-import android.util.MutableInt
+import android.support.v7.widget.GridLayout
+import android.widget.TextView
 import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_main.*
 import morningstarwang.com.tmd_mobile.api.PostService
@@ -28,22 +28,45 @@ import java.util.*
 import kotlin.collections.ArrayList
 import retrofit2.Retrofit
 
+import kr.co.namee.permissiongen.PermissionFail
+import kr.co.namee.permissiongen.PermissionGen
+import kr.co.namee.permissiongen.PermissionSuccess
+import java.io.File
+import java.io.FileWriter
 
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
-    var mLAccList: MutableList<ThreeAxesData> = ArrayList()
-    var mGyrList: MutableList<ThreeAxesData> = ArrayList()
-    var mMagList: MutableList<ThreeAxesData> = ArrayList()
-    var mPressureList: MutableList<Float> = ArrayList()
+    var mLAcc = ThreeAxesData(0f, 0f, 0f)
+    var mGyr = ThreeAxesData(0f, 0f, 0f)
+    var mMag = ThreeAxesData(0f, 0f, 0f)
     var mPressure = 0f
+    val mLAccList:MutableList<ThreeAxesData> = ArrayList()
+    val mGyrList:MutableList<ThreeAxesData> = ArrayList()
+    val mMagList:MutableList<ThreeAxesData> = ArrayList()
+    val mPressureList:MutableList<Float> = ArrayList()
+    var mSensorManager: SensorManager? = null
+    var mLAccSensor: Sensor? = null
+    var mGyrSensor: Sensor? = null
+    var mMagSensor: Sensor? = null
+    var mPressureSensor: Sensor? = null
+    var confusionMatrix = Array<Array<TextView?>>(8) { arrayOfNulls(8) }
+    var mTimer: Timer? = null
+    var mTimerTask: TimerTask? = null
+    var mDataTimer: Timer? = null
+    var mDataTimerTask: TimerTask? = null
+
+    var realDataFlag = -1
+    var timstamp = 0L
+    var saveFile: File? = null
+    var outStream: FileWriter? = null
     private var handler: Handler = @SuppressLint("HandlerLeak")
 
-    object : Handler() {     //此处的object 要加，否则无法重写 handlerMessage
+    object : Handler() {
         override fun handleMessage(msg: Message?) {
             super.handleMessage(msg)
             when (msg?.what) {
                 MSG_PERIOD -> {
-                    if(msg.obj!=null){
+                    if (msg.obj != null) {
                         tvPeriod.text = (msg.obj as MutableList<*>)[0].toString()
                         val postDataJson = (msg.obj as MutableList<*>)[1].toString()
                         e("postDataJson=", postDataJson)
@@ -52,14 +75,55 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 .baseUrl("http://101.200.54.20:5000/")
                                 .build()
                         val service = retrofit.create(PostService::class.java)
-                        val body =  RequestBody.create(MediaType.parse("application/json"), postDataJson)
+                        val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
                         val call = service.predict(body)
 //                        val call = service.predict(postData)
-                        call.enqueue(object: retrofit2.Callback<ResponseBody>{
+                        call.enqueue(object : retrofit2.Callback<ResponseBody> {
                             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                                 val result = response.body()?.string().toString()
 //                                toast(result)
                                 tvResult.text = result
+                                var predictDataFlag = -1
+                                /**
+                                 * rbStill.isChecked -> dataFlag = 0
+                                rbWalk.isChecked -> dataFlag = 1
+                                rbRun.isChecked -> dataFlag = 2
+                                rbBike.isChecked -> dataFlag = 3
+                                rbCar.isChecked -> dataFlag = 4
+                                rbBus.isChecked -> dataFlag = 5
+                                rbTrain.isChecked -> dataFlag = 6
+                                rbSubway.isChecked -> dataFlag = 7
+                                 */
+                                when (result) {
+                                    "Still" -> predictDataFlag = 0
+                                    "Walk" -> predictDataFlag = 1
+                                    "Run" -> predictDataFlag = 2
+                                    "Bike" -> predictDataFlag = 3
+                                    "Car" -> predictDataFlag = 4
+                                    "Bus" -> predictDataFlag = 5
+                                    "Train" -> predictDataFlag = 6
+                                    "Subway" -> predictDataFlag = 7
+                                }
+                                if (realDataFlag != -1 && predictDataFlag != -1) {
+//                                    if(realDataFlag == predictDataFlag){
+                                    var currentCount = confusionMatrix[realDataFlag][predictDataFlag]!!.text.toString().toInt()
+                                    currentCount += 1
+                                    confusionMatrix[realDataFlag][predictDataFlag]!!.text = currentCount.toString()
+//                                    }else{
+//
+//                                    }
+                                }
+                                var correctCount = 0f
+                                for (i in 0..7) {
+                                    correctCount += confusionMatrix[i][i]!!.text.toString().toFloat()
+                                }
+                                var accuracy = -1f
+                                if (tvPeriod.text.toString() == "0") {
+                                    accuracy = 0f
+                                } else {
+                                    accuracy = correctCount / tvPeriod.text.toString().toFloat()
+                                }
+                                tvAccuracy.text = (accuracy * 100).toString() + "%"
                                 val speech = SpeechUtils.getInstance(applicationContext)
                                 speech.speakText(result)
                             }
@@ -67,47 +131,61 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                                 toast("Network Error, the reason is " + t.message)
                                 e("network_error_stacktrace", t.stackTrace.toString())
-//                                val msg = Message()
-//                                msg.what = MSG_PREDICT_FAIL
-//                                msg.obj = t
-//                                handler.sendMessage(msg)
                             }
 
                         })
                     }
+                }
+                MSG_STOP -> {
+                    System.exit(0)
                 }
             }
 
         }
     }
 
-
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
+
+//        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
+//        path += "tmd_mobile/"
+//        val file = File(path)
+//        if (!file.exists()) {
+//            file.mkdir()
+//        }
+        var mode = ""
+        when (realDataFlag) {
+            0 -> mode = "Still"
+            1 -> mode = "Walk"
+            2 -> mode = "Run"
+            3 -> mode = "Bike"
+            4 -> mode = "Car"
+            5 -> mode = "Bus"
+            6 -> mode = "Train"
+            7 -> mode = "Subway"
+        }
+//        saveFile = File(path, mode + "-" + timstamp + ".txt")
+
         when (event?.sensor?.type) {
             Sensor.TYPE_LINEAR_ACCELERATION -> {
-                tvLAccX.text = event.values[0].toString()
-                tvLAccY.text = event.values[1].toString()
-                tvLAccZ.text = event.values[2].toString()
-                mLAccList.add(ThreeAxesData(event.values[0], event.values[1], event.values[2]))
+                mLAcc.x = event.values[0]
+                mLAcc.y = event.values[1]
+                mLAcc.z = event.values[2]
             }
             Sensor.TYPE_GYROSCOPE -> {
-                tvGyrX.text = event.values[0].toString()
-                tvGyrY.text = event.values[1].toString()
-                tvGyrZ.text = event.values[2].toString()
-                mGyrList.add(ThreeAxesData(event.values[0], event.values[1], event.values[2]))
+                mGyr.x = event.values[0]
+                mGyr.y = event.values[1]
+                mGyr.z = event.values[2]
             }
             Sensor.TYPE_MAGNETIC_FIELD -> {
-                tvMagX.text = event.values[0].toString()
-                tvMagY.text = event.values[1].toString()
-                tvMagZ.text = event.values[2].toString()
-                mMagList.add(ThreeAxesData(event.values[0], event.values[1], event.values[2]))
+                mMag.x = event.values[0]
+                mMag.y = event.values[1]
+                mMag.z = event.values[2]
             }
             Sensor.TYPE_PRESSURE -> {
-                tvPressure.text = event.values[0].toString()
-//                mPressure  = event.values[0]
+                mPressure = event.values[0]
             }
         }
     }
@@ -115,122 +193,323 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        requestPermission()
+        initWriteData()
+        initActionBar()
+        wakeLocker()
+        initSensors()
+        initPredictions()
+        initConfusionMatrix()
+    }
+
+    private fun initWriteData() {
+        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
+        var mode = ""
+        path += "tmd_mobile/"
+        val file = File(path)
+        if (!file.exists()) {
+            file.mkdir()
+        }
+
+    }
+
+    private fun requestPermission() {
+        PermissionGen.with(this)
+                .addRequestCode(100)
+                .permissions(
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE)
+                .request()
+    }
 
 
-        val mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val mLAccSensor: Sensor? = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-        val mGyrSensor: Sensor? = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-        val mMagSensor: Sensor? = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-        val mPressureSensor: Sensor? = mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
-        swDataCollection.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {//开启数据采集
-                mSensorManager.registerListener(this, mLAccSensor, 0)
-                mSensorManager.registerListener(this, mGyrSensor, 0)
-                mSensorManager.registerListener(this, mMagSensor, 0)
-                mSensorManager.registerListener(this, mPressureSensor, 0)
-            } else {//关闭数据采集
-                mSensorManager.unregisterListener(this, mLAccSensor)
-                mSensorManager.unregisterListener(this, mGyrSensor)
-                mSensorManager.unregisterListener(this, mMagSensor)
-                mSensorManager.unregisterListener(this, mPressureSensor)
+    private fun initActionBar() {
+        val actionBar = supportActionBar
+        actionBar!!.setLogo(R.mipmap.icon)
+        actionBar.setDisplayUseLogoEnabled(true)
+        actionBar.setDisplayShowHomeEnabled(true)
+    }
+
+    private fun wakeLocker() {
+        val pm =
+                getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                MainActivity::class.java.name)
+        wakeLock.acquire()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        PermissionGen.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+    }
+
+    @PermissionSuccess(requestCode = 100)
+    fun permissionPassed() {
+    }
+
+    @PermissionFail(requestCode = 100)
+    fun permissionDenied() {
+        toast("App needs the permission to run normally")
+        handler.sendEmptyMessageDelayed(MSG_STOP, 2000)
+    }
+
+    @SuppressLint("ResourceType")
+    private fun initConfusionMatrix() {
+        glConfusionMatrix.removeAllViews()
+        for (i in 0..7) {
+            for (j in 0..7) {
+                val textView = TextView(this)
+                textView.text = "0"
+                textView.setTextColor(resources.getColor(android.R.color.black))
+                confusionMatrix[i][j] = textView
             }
         }
-        swModeDetection.setOnCheckedChangeListener { _, isChecked ->
-            val task: TimerTask = object : TimerTask() {
-                override fun run() {
-                    val currentPeriod = tvPeriod.text.toString().toInt()
-                    val msg = Message()
-                    msg.what = MSG_PERIOD
-                    var objs:MutableList<Any> = ArrayList()
-                    objs.add((currentPeriod + 1).toString())
-
-                    e("currentPeriod", (currentPeriod + 1).toString())
-                    var mLAccOK = false
-                    var mGyrOK = false
-                    var mMagOK = false
-                    var mPressureOK = false
-                    var postLAccList:List<ThreeAxesData> = ArrayList()
-                    var postGyrList:List<ThreeAxesData> = ArrayList()
-                    var postMagList:List<ThreeAxesData> = ArrayList()
-                    var postPressureList:MutableList<Float> = ArrayList()
-                    for (i in 1..(100 * edtWindowSize.text.toString().toFloat()).toInt()){
-                        mPressure -= 2
-                        postPressureList.add(mPressure)
-                    }
-                    e("mLAccList.size=", mLAccList.size.toString())
-                    e("mGyrList.size=", mGyrList.size.toString())
-                    e("mMagList.size=", mMagList.size.toString())
-                    e("mPressureList.size=", mPressureList.size.toString())
-                    //LAcc
-                    if (mLAccList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
-                        val savedLAccList: MutableList<ThreeAxesData> = ArrayList()
-                        for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
-                            savedLAccList.add(mLAccList[i])
-                        }
-                        mLAccList = ArrayList()
-                        e("savedLAccList.size=", savedLAccList.size.toString())
-                        mLAccOK = true
-                        postLAccList = savedLAccList
-                    }
-                    //Gyr
-                    if (mGyrList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
-                        val savedGyrList: MutableList<ThreeAxesData> = ArrayList()
-                        for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
-                            savedGyrList.add(mGyrList[i])
-                        }
-                        mGyrList = ArrayList()
-                        e("savedGyrList.size=", savedGyrList.size.toString())
-                        mGyrOK = true
-                        postGyrList = savedGyrList
-                    }
-                    //Mag
-                    if (mMagList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
-                        val savedMagList: MutableList<ThreeAxesData> = ArrayList()
-                        for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
-                            savedMagList.add(mMagList[i])
-                        }
-                        mMagList = ArrayList()
-                        e("savedMagList.size=", savedMagList.size.toString())
-                        mMagOK = true
-                        postMagList = savedMagList
-                    }
-                    //Pressure
-                    mPressureOK = true
-//                    if (mPressureList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
-//                        val savedPressureList: MutableList<Float> = ArrayList()
-//                        for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
-//                            savedPressureList.add(mPressureList[i])
-//                        }
-//                        mPressureList = ArrayList()
-//                        e("savedPressureList.size=", savedPressureList.size.toString())
-//                        mPressureOK = true
-//                        postPressureList = savedPressureList
-//                    }
-                    if(mLAccOK && mMagOK && mGyrOK && mPressureOK){//向服务器发送数据
-                        val postData = PostData(postLAccList, postGyrList, postMagList, postPressureList)
-                        val postDataJson  = Gson().toJson(postData)
-
-                        objs.add(postDataJson)
-                        msg.obj = objs
-                    }
-
-                    handler.sendMessage(msg)
-
-                }
-            }
-            val timer = Timer()
-            if (isChecked) {//开始预测
-                timer.schedule(task, 0, (1000 * edtWindowSize.text.toString().toFloat()).toLong())
-            } else {//停止预测
-                tvPeriod.text = "0"
-                timer.cancel()
+        for (i in 0..7) {
+            for (j in 0..7) {
+                val mLayoutParams = GridLayout.LayoutParams()
+                mLayoutParams.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1.0f)
+                mLayoutParams.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1.0f)
+                glConfusionMatrix.addView(confusionMatrix[i][j], mLayoutParams)
             }
         }
     }
 
+    private fun initPredictions() {
+        swModeDetection.setOnCheckedChangeListener { _, isChecked ->
+            if (!swDataCollection.isChecked) {
+                swModeDetection.isChecked = false
+                toast("Please start data collection first!")
+                return@setOnCheckedChangeListener
+            }
+            if (isChecked) {//开始预测
+                initConfusionMatrix()
+                if (mTimer == null) {
+                    mTimer = Timer()
+                }
+                if (mTimerTask == null) {
+                    mTimerTask = object : TimerTask() {
+                        override fun run() {
+                            val currentPeriod = tvPeriod.text.toString().toInt()
+                            val msg = Message()
+                            toast("mLAccList.size="+ mLAccList.size.toString())
+                            toast("mGyrList.size="+ mGyrList.size.toString())
+                            toast("mMagList.size="+ mMagList.size.toString())
+                            toast("mPressureList.size="+ mPressureList.size.toString())
+                            msg.what = MSG_PERIOD
+                            val objs: MutableList<Any> = ArrayList()
+                            objs.add((currentPeriod + 1).toString())
+                            e("currentPeriod", (currentPeriod + 1).toString())
+                            var mLAccOK = false
+                            var mGyrOK = false
+                            var mMagOK = false
+                            var mPressureOK = false
+                            var postLAccList: List<ThreeAxesData> = ArrayList()
+                            var postGyrList: List<ThreeAxesData> = ArrayList()
+                            var postMagList: List<ThreeAxesData> = ArrayList()
+                            var postPressureList: MutableList<Float> = ArrayList()
+//                            for (i in 1..(100 * edtWindowSize.text.toString().toFloat()).toInt()) {
+//                                postPressureList.add(mPressure)
+//                            }
+
+                            //LAcc
+                            if (mLAccList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                                val savedLAccList: MutableList<ThreeAxesData> = ArrayList()
+                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                    savedLAccList.add(mLAccList[i])
+                                }
+                                e("savedLAccList.size=", savedLAccList.size.toString())
+                                mLAccList.clear()
+                                mLAccOK = true
+                                postLAccList = savedLAccList
+                            }
+                            //Gyr
+                            if (mGyrList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                                val savedGyrList: MutableList<ThreeAxesData> = ArrayList()
+                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                    savedGyrList.add(mGyrList[i])
+                                }
+                                e("savedGyrList.size=", savedGyrList.size.toString())
+                                mGyrList.clear()
+                                mGyrOK = true
+                                postGyrList = savedGyrList
+                            }
+                            //Mag
+                            if (mMagList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                                val savedMagList: MutableList<ThreeAxesData> = ArrayList()
+                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                    savedMagList.add(mMagList[i])
+                                }
+                                e("savedMagList.size=", savedMagList.size.toString())
+                                mMagList.clear()
+                                mMagOK = true
+                                postMagList = savedMagList
+                            }
+                            //Pressure
+                            mPressureOK = true
+                        if (mPressureList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                            val savedPressureList: MutableList<Float> = ArrayList()
+                            for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                savedPressureList.add(mPressureList[i])
+                            }
+                            mPressureList.clear()
+                            e("savedPressureList.size=", savedPressureList.size.toString())
+                            mPressureOK = true
+                            postPressureList = savedPressureList
+                        }
+                            if (mLAccOK && mMagOK && mGyrOK && mPressureOK) {//向服务器发送数据
+                                val postData = PostData(postLAccList, postGyrList, postMagList, postPressureList)
+                                val postDataJson = Gson().toJson(postData)
+
+                                objs.add(postDataJson)
+                                msg.obj = objs
+                            }
+
+                            handler.sendMessage(msg)
+
+                        }
+                    }
+                }
+                if (mTimer != null && mTimerTask != null) {
+                    mTimer!!.schedule(mTimerTask, 0, (1000 * edtWindowSize.text.toString().toFloat()).toLong())
+                }
+            } else {//停止预测
+                stopPredict()
+            }
+        }
+    }
+
+    private fun stopPredict() {
+        tvPeriod.text = "0"
+        tvResult.text = "N/A"
+        if (mTimer != null) {
+            mTimer!!.cancel()
+            mTimer = null
+        }
+        if (mTimerTask != null) {
+            mTimerTask!!.cancel()
+            mTimerTask = null
+        }
+    }
+
+    private fun initSensors() {
+        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        mLAccSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        mGyrSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        mMagSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        mPressureSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_PRESSURE)
+        swDataCollection.setOnCheckedChangeListener { _, isChecked ->
+            if (swModeDetection.isChecked) {
+                toast("Please stop mode detection first!")
+                swDataCollection.isChecked = true
+                return@setOnCheckedChangeListener
+            }
+            if (!rbStill.isChecked &&
+                    !rbWalk.isChecked &&
+                    !rbRun.isChecked &&
+                    !rbBike.isChecked &&
+                    !rbCar.isChecked &&
+                    !rbBus.isChecked &&
+                    !rbTrain.isChecked &&
+                    !rbSubway.isChecked) {
+                toast("Please select a specific transportation mode!")
+                swDataCollection.isChecked = false
+                return@setOnCheckedChangeListener
+            }
+            if (isChecked) {//开启数据采集
+                timstamp = System.currentTimeMillis()
+                when {
+                    rbStill.isChecked -> realDataFlag = 0
+                    rbWalk.isChecked -> realDataFlag = 1
+                    rbRun.isChecked -> realDataFlag = 2
+                    rbBike.isChecked -> realDataFlag = 3
+                    rbCar.isChecked -> realDataFlag = 4
+                    rbBus.isChecked -> realDataFlag = 5
+                    rbTrain.isChecked -> realDataFlag = 6
+                    rbSubway.isChecked -> realDataFlag = 7
+                }
+                startSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)
+                if (mDataTimer == null) {
+                    mDataTimer = Timer()
+                }
+                if (mDataTimerTask == null) {
+                    mDataTimerTask = object : TimerTask() {
+                        override fun run() {
+                            val mLAccAdd  = mLAcc.copy()
+                            val mGyrAdd = mGyr.copy()
+                            val mMagAdd = mMag.copy()
+                            val mPressureAdd = mPressure
+                            mLAccList.add(mLAccAdd)
+                            mGyrList.add(mGyrAdd)
+                            mMagList.add(mMagAdd)
+                            mPressureList.add(mPressureAdd)
+                        }
+                    }
+                }
+                if (mDataTimer != null && mDataTimerTask != null) {
+                    mDataTimer!!.schedule(mDataTimerTask, 0, 10)
+                }
+            } else {//关闭数据采集
+                stopSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)
+                if (mDataTimer != null) {
+                    mDataTimer!!.cancel()
+                    mDataTimer = null
+                }
+                if (mDataTimerTask != null) {
+                    mDataTimerTask!!.cancel()
+                    mDataTimerTask = null
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopPredict()
+        if (mSensorManager != null)
+            stopSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)
+
+    }
+
+    private fun stopSensor(mSensorManager: SensorManager, mLAccSensor: Sensor?, mGyrSensor: Sensor?, mMagSensor: Sensor?, mPressureSensor: Sensor?) {
+        enableAllRadioButtons()
+        mSensorManager.unregisterListener(this, mLAccSensor)
+        mSensorManager.unregisterListener(this, mGyrSensor)
+        mSensorManager.unregisterListener(this, mMagSensor)
+        mSensorManager.unregisterListener(this, mPressureSensor)
+    }
+
+    private fun startSensor(mSensorManager: SensorManager, mLAccSensor: Sensor?, mGyrSensor: Sensor?, mMagSensor: Sensor?, mPressureSensor: Sensor?) {
+        disableAllRadioButtons()
+        mSensorManager.registerListener(this, mLAccSensor, 0)
+        mSensorManager.registerListener(this, mGyrSensor, 0)
+        mSensorManager.registerListener(this, mMagSensor, 0)
+        mSensorManager.registerListener(this, mPressureSensor, 0)
+    }
+
+    private fun enableAllRadioButtons() {
+        rbStill.isEnabled = true
+        rbWalk.isEnabled = true
+        rbRun.isEnabled = true
+        rbBike.isEnabled = true
+        rbCar.isEnabled = true
+        rbBus.isEnabled = true
+        rbTrain.isEnabled = true
+        rbSubway.isEnabled = true
+    }
+
+    private fun disableAllRadioButtons() {
+        rbStill.isEnabled = false
+        rbWalk.isEnabled = false
+        rbRun.isEnabled = false
+        rbBike.isEnabled = false
+        rbCar.isEnabled = false
+        rbBus.isEnabled = false
+        rbTrain.isEnabled = false
+        rbSubway.isEnabled = false
+    }
+
     companion object {
         const val MSG_PERIOD = 0x1
-        const val MSG_PREDICT_OK = 0x2
+        const val MSG_STOP = 0x2
         const val MSG_PREDICT_FAIL = 0x3
     }
 }
