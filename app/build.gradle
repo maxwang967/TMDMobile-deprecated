@@ -5,7 +5,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "morningstarwang.com.tmd_mobile"
+        applicationId "com.morningstarwang.tmdmobile"
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 1

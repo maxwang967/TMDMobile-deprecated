@@ -1,4 +1,4 @@
-package morningstarwang.com.tmd_mobile
+package com.morningstarwang.tmdmobile
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -9,32 +9,31 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.support.v7.app.AppCompatActivity
-import android.util.Log.e
 import android.support.v7.widget.GridLayout
+import android.util.Log.e
 import android.widget.TextView
 import com.google.gson.Gson
+import com.morningstarwang.tmdmobile.api.PostService
+import com.morningstarwang.tmdmobile.pojo.PostData
+import com.morningstarwang.tmdmobile.pojo.ThreeAxesData
+import com.morningstarwang.tmdmobile.utils.SpeechUtils
 import kotlinx.android.synthetic.main.activity_main.*
-import morningstarwang.com.tmd_mobile.api.PostService
-import morningstarwang.com.tmd_mobile.pojo.PostData
-import morningstarwang.com.tmd_mobile.pojo.ThreeAxesData
-import morningstarwang.com.tmd_mobile.utils.SpeechUtils
+import kr.co.namee.permissiongen.PermissionFail
+import kr.co.namee.permissiongen.PermissionGen
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import org.jetbrains.anko.toast
 import retrofit2.Call
 import retrofit2.Response
-import java.util.*
-import kotlin.collections.ArrayList
 import retrofit2.Retrofit
-
-import kr.co.namee.permissiongen.PermissionFail
-import kr.co.namee.permissiongen.PermissionGen
-import kr.co.namee.permissiongen.PermissionSuccess
 import java.io.File
 import java.io.FileWriter
+import java.util.*
+import kotlin.collections.ArrayList
 
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity(), SensorEventListener {
     var path = ""
     var mLAcc = ThreeAxesData(0f, 0f, 0f)
@@ -45,16 +44,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     val mGyrList: MutableList<ThreeAxesData> = ArrayList()
     val mMagList: MutableList<ThreeAxesData> = ArrayList()
     val mPressureList: MutableList<Float> = ArrayList()
-    var mSensorManager: SensorManager? = null
-    var mLAccSensor: Sensor? = null
-    var mGyrSensor: Sensor? = null
-    var mMagSensor: Sensor? = null
-    var mPressureSensor: Sensor? = null
+    private var mSensorManager: SensorManager? = null
+    private var mLAccSensor: Sensor? = null
+    private var mGyrSensor: Sensor? = null
+    private var mMagSensor: Sensor? = null
+    private var mPressureSensor: Sensor? = null
     var confusionMatrix = Array<Array<TextView?>>(8) { arrayOfNulls(8) }
-    var mTimer: Timer? = null
-    var mTimerTask: TimerTask? = null
-    var mDataTimer: Timer? = null
-    var mDataTimerTask: TimerTask? = null
+    private var mTimer: Timer? = null
+    private var mTimerTask: TimerTask? = null
+    private var mDataTimer: Timer? = null
+    private var mDataTimerTask: TimerTask? = null
 
     var realDataFlag = -1
     var timstamp = 0L
@@ -71,18 +70,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         tvPeriod.text = (msg.obj as MutableList<*>)[0].toString()
                         val postDataJson = (msg.obj as MutableList<*>)[1].toString()
                         e("postDataJson=", postDataJson)
-//                        val postData = (msg.obj as MutableList<*>)[1] as PostData
                         val retrofit = Retrofit.Builder()
                                 .baseUrl("http://101.200.54.20:5000/")
                                 .build()
                         val service = retrofit.create(PostService::class.java)
                         val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
                         val call = service.predict(body)
-//                        val call = service.predict(postData)
                         call.enqueue(object : retrofit2.Callback<ResponseBody> {
                             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                                 val result = response.body()?.string().toString()
-//                                toast(result)
                                 tvResult.text = result
                                 var predictDataFlag = -1
                                 /**
@@ -106,29 +102,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                     "Subway" -> predictDataFlag = 7
                                 }
                                 if (realDataFlag != -1 && predictDataFlag != -1) {
-//                                    if(realDataFlag == predictDataFlag){
                                     var currentCount = confusionMatrix[realDataFlag][predictDataFlag]!!.text.toString().toInt()
                                     currentCount += 1
                                     confusionMatrix[realDataFlag][predictDataFlag]!!.text = currentCount.toString()
-//                                    }else{
-//
-//                                    }
                                 }
                                 var correctCount = 0f
                                 for (i in 0..7) {
                                     correctCount += confusionMatrix[i][i]!!.text.toString().toFloat()
                                 }
-                                var accuracy = -1f
-                                if (tvPeriod.text.toString() == "0") {
-                                    accuracy = 0f
+                                val accuracy: Float
+                                accuracy = if (tvPeriod.text.toString() == "0") {
+                                    0f
                                 } else {
-                                    accuracy = correctCount / tvPeriod.text.toString().toFloat()
+                                    correctCount / tvPeriod.text.toString().toFloat()
                                 }
                                 tvAccuracy.text = (accuracy * 100).toString() + "%"
                                 val speech = SpeechUtils.getInstance(applicationContext)
                                 speech.speakText(result)
                             }
-
                             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                                 toast("Network Error, the reason is " + t.message)
                                 e("network_error_stacktrace", t.stackTrace.toString())
@@ -149,15 +140,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-
-//        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
-//        path += "tmd_mobile/"
-//        val file = File(path)
-//        if (!file.exists()) {
-//            file.mkdir()
-//        }
-
-
         when (event?.sensor?.type) {
             Sensor.TYPE_LINEAR_ACCELERATION -> {
                 mLAcc.x = event.values[0]
@@ -184,7 +166,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         requestPermission()
-//        initWriteData()
         initActionBar()
         wakeLocker()
         initSensors()
@@ -192,16 +173,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         initConfusionMatrix()
     }
 
-//    private fun initWriteData() {
-//        var path = Environment.getExternalStorageDirectory().absolutePath + "/"
-//        var mode = ""
-//        path += "tmd_mobile/"
-//        val file = File(path)
-//        if (!file.exists()) {
-//            file.mkdir()
-//        }
-//
-//    }
 
     private fun requestPermission() {
         PermissionGen.with(this)
@@ -220,6 +191,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         actionBar.setDisplayShowHomeEnabled(true)
     }
 
+    @SuppressLint("WakelockTimeout")
     private fun wakeLocker() {
         val pm =
                 getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -232,9 +204,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         PermissionGen.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
-    @PermissionSuccess(requestCode = 100)
-    fun permissionPassed() {
-    }
 
     @PermissionFail(requestCode = 100)
     fun permissionDenied() {
@@ -291,14 +260,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             var mLAccOK = false
                             var mGyrOK = false
                             var mMagOK = false
-                            var mPressureOK = false
+                            var mPressureOK: Boolean
                             var postLAccList: List<ThreeAxesData> = ArrayList()
                             var postGyrList: List<ThreeAxesData> = ArrayList()
                             var postMagList: List<ThreeAxesData> = ArrayList()
                             var postPressureList: MutableList<Float> = ArrayList()
-//                            for (i in 1..(100 * edtWindowSize.text.toString().toFloat()).toInt()) {
-//                                postPressureList.add(mPressure)
-//                            }
 
                             //LAcc
                             if (mLAccList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
@@ -351,9 +317,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 objs.add(postDataJson)
                                 msg.obj = objs
                             }
-
                             handler.sendMessage(msg)
-
                         }
                     }
                 }
@@ -436,10 +400,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             mGyrList.add(mGyrAdd)
                             mMagList.add(mMagAdd)
                             mPressureList.add(mPressureAdd)
-                            val content = mLAccAdd.x.toString() + "," + mLAccAdd.y.toString() + "," + mLAccAdd.z.toString() + "," +
-                                        mGyrAdd.x.toString() + "," + mGyrAdd.y.toString() + "," + mGyrAdd.z.toString() + ","  +
-                                        mMagAdd.x.toString() + "," + mMagAdd.y.toString() + "," + mMagAdd.z.toString() + "," +
-                                        mPressureAdd.toString() + "\n"
+                            val content = "${mLAccAdd.x},${mLAccAdd.y},${mLAccAdd.z},${mGyrAdd.x},${mGyrAdd.y},${mGyrAdd.z},${mMagAdd.x},${mMagAdd.y},${mMagAdd.z},$mPressureAdd\n"
                             var mode = ""
                             when (realDataFlag) {
                                 0 -> mode = "Still"
@@ -451,7 +412,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 6 -> mode = "Train"
                                 7 -> mode = "Subway"
                             }
-                            saveFile = File(path, mode + "-" + timstamp + ".txt")
+                            saveFile = File(path, "$mode-$timstamp.txt")
                             outStream = FileWriter(saveFile, true)
                             outStream!!.write(content)
                             outStream!!.close()
@@ -524,6 +485,5 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     companion object {
         const val MSG_PERIOD = 0x1
         const val MSG_STOP = 0x2
-        const val MSG_PREDICT_FAIL = 0x3
     }
 }
