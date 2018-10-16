@@ -16,62 +16,30 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1">
-
             <RadioButton
-                android:id="@+id/rbStill"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Still" />
-
-            <RadioButton
-                android:id="@+id/rbWalk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Walk" />
-
-            <RadioButton
-                android:id="@+id/rbRun"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Run" />
-
-            <RadioButton
-                android:id="@+id/rbBike"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Bike" />
-
-            <RadioButton
-                android:id="@+id/rbCar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Car" />
-
-            <RadioButton
-                android:id="@+id/rbBus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Bus" />
-
-            <RadioButton
-                android:id="@+id/rbTrain"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Train" />
-
-            <RadioButton
-                android:id="@+id/rbSubway"
+                android:id="@+id/rbSubway4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Subway" />
+            <RadioButton
+                android:id="@+id/rbTrain4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Train" />
+            <RadioButton
+                android:id="@+id/rbBus4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Bus" />
+            <RadioButton
+                android:id="@+id/rbCar4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Car" />
         </RadioGroup>
 
         <LinearLayout
@@ -81,12 +49,12 @@
             android:layout_weight="1">
 
             <android.support.v7.widget.GridLayout
-                android:id="@+id/glConfusionMatrix"
+                android:id="@+id/glConfusionMatrix4"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_margin="20dp"
-                app:columnCount="8"
-                app:rowCount="8">
+                app:columnCount="4"
+                app:rowCount="4">
             </android.support.v7.widget.GridLayout>
             <LinearLayout
                 android:layout_margin="20dp"
@@ -101,7 +69,7 @@
                     android:layout_height="wrap_content" />
                 <TextView
                     android:textColor="#000000"
-                    android:id="@+id/tvAccuracy"
+                    android:id="@+id/tvAccuracy4"
                     android:text="0%"
                     android:layout_weight="1"
                     android:layout_width="0dp"
@@ -124,7 +92,7 @@
             android:textColor="@color/colorPrimaryDark" />
 
         <EditText
-            android:id="@+id/edtWindowSize"
+            android:id="@+id/edtWindowSize4"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginRight="10dp"
@@ -143,14 +111,14 @@
     </LinearLayout>
 
     <Switch
-        android:id="@+id/swDataCollection"
+        android:id="@+id/swDataCollection4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="Data Collection" />
 
     <Switch
-        android:id="@+id/swModeDetection"
+        android:id="@+id/swModeDetection4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Mode Detection" />
@@ -168,7 +136,7 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvResult"
+            android:id="@+id/tvResult4"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
@@ -191,19 +159,21 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvPeriod"
+            android:id="@+id/tvPeriod4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0"
             android:textStyle="bold" />
     </LinearLayout>
+
     <Button
-        android:id="@+id/btn_switch_to_4"
+        android:id="@+id/btn_switch_to_8"
         android:layout_margin="10dp"
         android:background="@drawable/bg_btn"
         android:textColor="#ffffff"
         android:textSize="10sp"
-        android:text="Switch to 4-mode-detection->"
+        android:text="Switch to 8-mode-detection->"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="32sp" />
 

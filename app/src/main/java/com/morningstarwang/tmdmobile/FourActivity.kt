@@ -17,12 +17,14 @@ import com.morningstarwang.tmdmobile.api.PostService
 import com.morningstarwang.tmdmobile.pojo.PostData
 import com.morningstarwang.tmdmobile.pojo.ThreeAxesData
 import com.morningstarwang.tmdmobile.utils.SpeechUtils
+import kotlinx.android.synthetic.main.activity_four.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kr.co.namee.permissiongen.PermissionFail
 import kr.co.namee.permissiongen.PermissionGen
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
+import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.sdk25.coroutines.onClick
 import org.jetbrains.anko.startActivity
 import org.jetbrains.anko.toast
@@ -36,7 +38,7 @@ import kotlin.collections.ArrayList
 
 
 @Suppress("DEPRECATION")
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class FourActivity : AppCompatActivity(), SensorEventListener {
     var path = ""
     var mLAcc = ThreeAxesData(0f, 0f, 0f)
     var mGyr = ThreeAxesData(0f, 0f, 0f)
@@ -51,7 +53,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var mGyrSensor: Sensor? = null
     private var mMagSensor: Sensor? = null
     private var mPressureSensor: Sensor? = null
-    var confusionMatrix = Array<Array<TextView?>>(8) { arrayOfNulls(8) }
+    var confusionMatrix = Array<Array<TextView?>>(4) { arrayOfNulls(4) }
     private var mTimer: Timer? = null
     private var mTimerTask: TimerTask? = null
     private var mDataTimer: Timer? = null
@@ -69,7 +71,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             when (msg?.what) {
                 MSG_PERIOD -> {
                     if (msg.obj != null) {
-                        tvPeriod.text = (msg.obj as MutableList<*>)[0].toString()
+                        tvPeriod4.text = (msg.obj as MutableList<*>)[0].toString()
                         val postDataJson = (msg.obj as MutableList<*>)[1].toString()
                         e("postDataJson=", postDataJson)
                         val retrofit = Retrofit.Builder()
@@ -77,11 +79,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 .build()
                         val service = retrofit.create(PostService::class.java)
                         val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
-                        val call = service.predict8(body)
+                        val call = service.predict4(body)
                         call.enqueue(object : retrofit2.Callback<ResponseBody> {
                             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                                 val result = response.body()?.string().toString()
-                                tvResult.text = result
+                                tvResult4.text = result
                                 var predictDataFlag = -1
                                 /**
                                  * rbStill.isChecked -> dataFlag = 0
@@ -94,14 +96,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 rbSubway.isChecked -> dataFlag = 7
                                  */
                                 when (result) {
-                                    "Still" -> predictDataFlag = 0
-                                    "Walk" -> predictDataFlag = 1
-                                    "Run" -> predictDataFlag = 2
-                                    "Bike" -> predictDataFlag = 3
-                                    "Car" -> predictDataFlag = 4
-                                    "Bus" -> predictDataFlag = 5
-                                    "Train" -> predictDataFlag = 6
-                                    "Subway" -> predictDataFlag = 7
+                                    "Car" -> predictDataFlag = 3
+                                    "Bus" -> predictDataFlag = 2
+                                    "Train" -> predictDataFlag = 1
+                                    "Subway" -> predictDataFlag = 0
                                 }
                                 if (realDataFlag != -1 && predictDataFlag != -1) {
                                     var currentCount = confusionMatrix[realDataFlag][predictDataFlag]!!.text.toString().toInt()
@@ -109,16 +107,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                     confusionMatrix[realDataFlag][predictDataFlag]!!.text = currentCount.toString()
                                 }
                                 var correctCount = 0f
-                                for (i in 0..7) {
+                                for (i in 0..3) {
                                     correctCount += confusionMatrix[i][i]!!.text.toString().toFloat()
                                 }
                                 val accuracy: Float
-                                accuracy = if (tvPeriod.text.toString() == "0") {
+                                accuracy = if (tvPeriod4.text.toString() == "0") {
                                     0f
                                 } else {
-                                    correctCount / tvPeriod.text.toString().toFloat()
+                                    correctCount / tvPeriod4.text.toString().toFloat()
                                 }
-                                tvAccuracy.text = (accuracy * 100).toString() + "%"
+                                tvAccuracy4.text = (accuracy * 100).toString() + "%"
                                 val speech = SpeechUtils.getInstance(applicationContext)
                                 speech.speakText(result)
                             }
@@ -143,7 +141,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
         when (event?.sensor?.type) {
-            Sensor.TYPE_LINEAR_ACCELERATION -> {
+            Sensor.TYPE_ACCELEROMETER -> {
                 mLAcc.x = event.values[0]
                 mLAcc.y = event.values[1]
                 mLAcc.z = event.values[2]
@@ -166,8 +164,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        title = "8-Mode-Detection"
+        setContentView(R.layout.activity_four)
+        title = "4-Mode-Detection"
         requestPermission()
         initActionBar()
         wakeLocker()
@@ -199,7 +197,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val pm =
                 getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                MainActivity::class.java.name)
+                FourActivity::class.java.name)
         wakeLock.acquire()
     }
 
@@ -216,33 +214,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     @SuppressLint("ResourceType")
     private fun initConfusionMatrix() {
-        glConfusionMatrix.removeAllViews()
-        for (i in 0..7) {
-            for (j in 0..7) {
+        glConfusionMatrix4.removeAllViews()
+        for (i in 0..3) {
+            for (j in 0..3) {
                 val textView = TextView(this)
                 textView.text = "0"
                 textView.setTextColor(resources.getColor(android.R.color.black))
                 confusionMatrix[i][j] = textView
             }
         }
-        for (i in 0..7) {
-            for (j in 0..7) {
+        for (i in 0..3) {
+            for (j in 0..3) {
                 val mLayoutParams = GridLayout.LayoutParams()
                 mLayoutParams.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1.0f)
                 mLayoutParams.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1.0f)
-                glConfusionMatrix.addView(confusionMatrix[i][j], mLayoutParams)
+                glConfusionMatrix4.addView(confusionMatrix[i][j], mLayoutParams)
             }
         }
     }
 
     private fun initPredictions() {
-        btn_switch_to_4.onClick {
-            startActivity<FourActivity>()
+        btn_switch_to_8.onClick {
+            startActivity<MainActivity>()
             finish()
         }
-        swModeDetection.setOnCheckedChangeListener { _, isChecked ->
-            if (!swDataCollection.isChecked) {
-                swModeDetection.isChecked = false
+        swModeDetection4.setOnCheckedChangeListener { _, isChecked ->
+            if (!swDataCollection4.isChecked) {
+                swModeDetection4.isChecked = false
                 toast("Please start data collection first!")
                 return@setOnCheckedChangeListener
             }
@@ -254,7 +252,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if (mTimerTask == null) {
                     mTimerTask = object : TimerTask() {
                         override fun run() {
-                            val currentPeriod = tvPeriod.text.toString().toInt()
+                            val currentPeriod = tvPeriod4.text.toString().toInt()
                             val msg = Message()
                             e("mLAccList.size=", mLAccList.size.toString())
                             e("mGyrList.size=", mGyrList.size.toString())
@@ -274,9 +272,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             var postPressureList: MutableList<Float> = ArrayList()
 
                             //LAcc
-                            if (mLAccList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                            if (mLAccList.size >= 100 * edtWindowSize4.text.toString().toFloat()) {//数据充分,足够预测
                                 val savedLAccList: MutableList<ThreeAxesData> = ArrayList()
-                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                for (i in 0..((100 * edtWindowSize4.text.toString().toFloat() - 1).toInt())) {
                                     savedLAccList.add(mLAccList[i])
                                 }
                                 e("savedLAccList.size=", savedLAccList.size.toString())
@@ -285,9 +283,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 postLAccList = savedLAccList
                             }
                             //Gyr
-                            if (mGyrList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                            if (mGyrList.size >= 100 * edtWindowSize4.text.toString().toFloat()) {//数据充分,足够预测
                                 val savedGyrList: MutableList<ThreeAxesData> = ArrayList()
-                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                for (i in 0..((100 * edtWindowSize4.text.toString().toFloat() - 1).toInt())) {
                                     savedGyrList.add(mGyrList[i])
                                 }
                                 e("savedGyrList.size=", savedGyrList.size.toString())
@@ -296,9 +294,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                                 postGyrList = savedGyrList
                             }
                             //Mag
-                            if (mMagList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                            if (mMagList.size >= 100 * edtWindowSize4.text.toString().toFloat()) {//数据充分,足够预测
                                 val savedMagList: MutableList<ThreeAxesData> = ArrayList()
-                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                for (i in 0..((100 * edtWindowSize4.text.toString().toFloat() - 1).toInt())) {
                                     savedMagList.add(mMagList[i])
                                 }
                                 e("savedMagList.size=", savedMagList.size.toString())
@@ -308,9 +306,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             }
                             //Pressure
                             mPressureOK = true
-                            if (mPressureList.size >= 100 * edtWindowSize.text.toString().toFloat()) {//数据充分,足够预测
+                            if (mPressureList.size >= 100 * edtWindowSize4.text.toString().toFloat()) {//数据充分,足够预测
                                 val savedPressureList: MutableList<Float> = ArrayList()
-                                for (i in 0..((100 * edtWindowSize.text.toString().toFloat() - 1).toInt())) {
+                                for (i in 0..((100 * edtWindowSize4.text.toString().toFloat() - 1).toInt())) {
                                     savedPressureList.add(mPressureList[i])
                                 }
                                 mPressureList.clear()
@@ -329,7 +327,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
                 if (mTimer != null && mTimerTask != null) {
-                    mTimer!!.schedule(mTimerTask, (1000 * edtWindowSize.text.toString().toFloat()).toLong(), (1000 * edtWindowSize.text.toString().toFloat()).toLong())
+                    mTimer!!.schedule(mTimerTask, (1000 * edtWindowSize4.text.toString().toFloat()).toLong(), (1000 * edtWindowSize4.text.toString().toFloat()).toLong())
                 }
             } else {//停止预测
                 stopPredict()
@@ -338,8 +336,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun stopPredict() {
-        tvPeriod.text = "0"
-        tvResult.text = "N/A"
+        tvPeriod4.text = "0"
+        tvResult4.text = "N/A"
         if (mTimer != null) {
             mTimer!!.cancel()
             mTimer = null
@@ -352,26 +350,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun initSensors() {
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        mLAccSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        mLAccSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         mGyrSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         mMagSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         mPressureSensor = mSensorManager!!.getDefaultSensor(Sensor.TYPE_PRESSURE)
-        swDataCollection.setOnCheckedChangeListener { _, isChecked ->
-            if (swModeDetection.isChecked) {
+        swDataCollection4.setOnCheckedChangeListener { _, isChecked ->
+            if (swModeDetection4.isChecked) {
                 toast("Please stop mode detection first!")
-                swDataCollection.isChecked = true
+                swDataCollection4.isChecked = true
                 return@setOnCheckedChangeListener
             }
-            if (!rbStill.isChecked &&
-                    !rbWalk.isChecked &&
-                    !rbRun.isChecked &&
-                    !rbBike.isChecked &&
-                    !rbCar.isChecked &&
-                    !rbBus.isChecked &&
-                    !rbTrain.isChecked &&
-                    !rbSubway.isChecked) {
+            if (    !rbCar4.isChecked &&
+                    !rbBus4.isChecked &&
+                    !rbTrain4.isChecked &&
+                    !rbSubway4.isChecked) {
                 toast("Please select a specific transportation mode!")
-                swDataCollection.isChecked = false
+                swDataCollection4.isChecked = false
                 return@setOnCheckedChangeListener
             }
             if (isChecked) {//开启数据采集
@@ -383,14 +377,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     file.mkdir()
                 }
                 when {
-                    rbStill.isChecked -> realDataFlag = 0
-                    rbWalk.isChecked -> realDataFlag = 1
-                    rbRun.isChecked -> realDataFlag = 2
-                    rbBike.isChecked -> realDataFlag = 3
-                    rbCar.isChecked -> realDataFlag = 4
-                    rbBus.isChecked -> realDataFlag = 5
-                    rbTrain.isChecked -> realDataFlag = 6
-                    rbSubway.isChecked -> realDataFlag = 7
+                    rbCar4.isChecked -> realDataFlag = 3
+                    rbBus4.isChecked -> realDataFlag = 2
+                    rbTrain4.isChecked -> realDataFlag = 1
+                    rbSubway4.isChecked -> realDataFlag = 0
                 }
                 startSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)
                 if (mDataTimer == null) {
@@ -410,14 +400,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             val content = "${mLAccAdd.x},${mLAccAdd.y},${mLAccAdd.z},${mGyrAdd.x},${mGyrAdd.y},${mGyrAdd.z},${mMagAdd.x},${mMagAdd.y},${mMagAdd.z},$mPressureAdd\n"
                             var mode = ""
                             when (realDataFlag) {
-                                0 -> mode = "Still"
-                                1 -> mode = "Walk"
-                                2 -> mode = "Run"
-                                3 -> mode = "Bike"
-                                4 -> mode = "Car"
-                                5 -> mode = "Bus"
-                                6 -> mode = "Train"
-                                7 -> mode = "Subway"
+                                3 -> mode = "Car"
+                                2 -> mode = "Bus"
+                                1 -> mode = "Train"
+                                0 -> mode = "Subway"
                             }
                             saveFile = File(path, "$mode-$timstamp.txt")
                             outStream = FileWriter(saveFile, true)
@@ -468,27 +454,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun enableAllRadioButtons() {
-        btn_switch_to_4.isEnabled = true
-        rbStill.isEnabled = true
-        rbWalk.isEnabled = true
-        rbRun.isEnabled = true
-        rbBike.isEnabled = true
-        rbCar.isEnabled = true
-        rbBus.isEnabled = true
-        rbTrain.isEnabled = true
-        rbSubway.isEnabled = true
+        rbCar4.isEnabled = true
+        rbBus4.isEnabled = true
+        rbTrain4.isEnabled = true
+        rbSubway4.isEnabled = true
     }
 
     private fun disableAllRadioButtons() {
-        btn_switch_to_4.isEnabled = false
-        rbStill.isEnabled = false
-        rbWalk.isEnabled = false
-        rbRun.isEnabled = false
-        rbBike.isEnabled = false
-        rbCar.isEnabled = false
-        rbBus.isEnabled = false
-        rbTrain.isEnabled = false
-        rbSubway.isEnabled = false
+        rbCar4.isEnabled = false
+        rbBus4.isEnabled = false
+        rbTrain4.isEnabled = false
+        rbSubway4.isEnabled = false
+        btn_switch_to_8.isEnabled = false
     }
 
     companion object {

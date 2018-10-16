@@ -22,6 +22,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "org.jetbrains.anko:anko:$anko_version"
     // Anko Commons
     implementation "org.jetbrains.anko:anko-commons:$anko_version"
     implementation 'com.android.support:appcompat-v7:26.+'
