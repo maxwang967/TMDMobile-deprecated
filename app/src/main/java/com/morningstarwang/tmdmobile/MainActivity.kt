@@ -13,7 +13,7 @@ import android.support.v7.widget.GridLayout
 import android.util.Log.e
 import android.widget.TextView
 import com.google.gson.Gson
-import com.morningstarwang.tmdmobile.api.PostService
+import com.morningstarwang.tmdmobile.api.PredictService
 import com.morningstarwang.tmdmobile.pojo.PostData
 import com.morningstarwang.tmdmobile.pojo.ThreeAxesData
 import com.morningstarwang.tmdmobile.utils.SpeechUtils
@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         val retrofit = Retrofit.Builder()
                                 .baseUrl("http://101.200.54.20:5000/")
                                 .build()
-                        val service = retrofit.create(PostService::class.java)
+                        val service = retrofit.create(PredictService::class.java)
                         val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
                         val call = service.predict8(body)
                         call.enqueue(object : retrofit2.Callback<ResponseBody> {
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        title = "8-Mode-Detection"
+//        title = "8-Mode-Detection"
         requestPermission()
         initActionBar()
         wakeLocker()

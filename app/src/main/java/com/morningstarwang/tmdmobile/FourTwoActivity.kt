@@ -13,19 +13,16 @@ import android.support.v7.widget.GridLayout
 import android.util.Log.e
 import android.widget.TextView
 import com.google.gson.Gson
-import com.morningstarwang.tmdmobile.api.PostService
+import com.morningstarwang.tmdmobile.api.PredictService
 import com.morningstarwang.tmdmobile.pojo.PostData
 import com.morningstarwang.tmdmobile.pojo.ThreeAxesData
 import com.morningstarwang.tmdmobile.utils.SpeechUtils
-import kotlinx.android.synthetic.main.activity_four.*
 import kotlinx.android.synthetic.main.activity_four_two.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kr.co.namee.permissiongen.PermissionFail
 import kr.co.namee.permissiongen.PermissionGen
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
-import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.sdk25.coroutines.onClick
 import org.jetbrains.anko.startActivity
 import org.jetbrains.anko.toast
@@ -59,6 +56,7 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
     private var mTimerTask: TimerTask? = null
     private var mDataTimer: Timer? = null
     private var mDataTimerTask: TimerTask? = null
+//    var isFirstPredict = true
 
     var realDataFlag = -1
     var timstamp = 0L
@@ -78,7 +76,7 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                         val retrofit = Retrofit.Builder()
                                 .baseUrl("http://47.95.255.173:5000/")
                                 .build()
-                        val service = retrofit.create(PostService::class.java)
+                        val service = retrofit.create(PredictService::class.java)
                         val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
                         val call = service.predict42(body)
                         call.enqueue(object : retrofit2.Callback<ResponseBody> {
@@ -166,7 +164,7 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_four_two)
-        title = "4-Mode-Detection-2min"
+//        title = "4-Mode-Detection-2min"
         requestPermission()
         initActionBar()
         wakeLocker()
@@ -253,20 +251,10 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                 if (mTimerTask == null) {
                     mTimerTask = object : TimerTask() {
                         override fun run() {
-                            val currentPeriod = tvPeriod42.text.toString().toInt()
-                            val msg = Message()
-                            e("mLAccList.size=", mLAccList.size.toString())
-                            e("mGyrList.size=", mGyrList.size.toString())
-                            e("mMagList.size=", mMagList.size.toString())
-                            e("mPressureList.size=", mPressureList.size.toString())
-                            msg.what = MSG_PERIOD
-                            val objs: MutableList<Any> = ArrayList()
-                            objs.add((currentPeriod + 1).toString())
-                            e("currentPeriod", (currentPeriod + 1).toString())
                             var mLAccOK = false
                             var mGyrOK = false
                             var mMagOK = false
-                            var mPressureOK: Boolean
+                            var mPressureOK = false
                             var postLAccList: List<ThreeAxesData> = ArrayList()
                             var postGyrList: List<ThreeAxesData> = ArrayList()
                             var postMagList: List<ThreeAxesData> = ArrayList()
@@ -279,7 +267,10 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                                     savedLAccList.add(mLAccList[i])
                                 }
                                 e("savedLAccList.size=", savedLAccList.size.toString())
-                                mLAccList.clear()
+//                                mLAccList.clear()
+                                for (i in 0..999){
+                                    mLAccList.removeAt(i)
+                                }
                                 mLAccOK = true
                                 postLAccList = savedLAccList
                             }
@@ -290,7 +281,10 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                                     savedGyrList.add(mGyrList[i])
                                 }
                                 e("savedGyrList.size=", savedGyrList.size.toString())
-                                mGyrList.clear()
+//                                mGyrList.clear()
+                                for (i in 0..999){
+                                    mGyrList.removeAt(i)
+                                }
                                 mGyrOK = true
                                 postGyrList = savedGyrList
                             }
@@ -301,7 +295,10 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                                     savedMagList.add(mMagList[i])
                                 }
                                 e("savedMagList.size=", savedMagList.size.toString())
-                                mMagList.clear()
+//                                mMagList.clear()
+                                for (i in 0..999){
+                                    mMagList.removeAt(i)
+                                }
                                 mMagOK = true
                                 postMagList = savedMagList
                             }
@@ -312,23 +309,37 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                                 for (i in 0..((100 * edtWindowSize42.text.toString().toFloat() - 1).toInt())) {
                                     savedPressureList.add(mPressureList[i])
                                 }
-                                mPressureList.clear()
+//                                mPressureList.clear()
+                                for (i in 0..999){
+                                    mPressureList.removeAt(i)
+                                }
                                 e("savedPressureList.size=", savedPressureList.size.toString())
                                 mPressureOK = true
                                 postPressureList = savedPressureList
                             }
                             if (mLAccOK && mMagOK && mGyrOK && mPressureOK) {//向服务器发送数据
+                                val currentPeriod = tvPeriod42.text.toString().toInt()
+                                val msg = Message()
+                                e("mLAccList.size=", mLAccList.size.toString())
+                                e("mGyrList.size=", mGyrList.size.toString())
+                                e("mMagList.size=", mMagList.size.toString())
+                                e("mPressureList.size=", mPressureList.size.toString())
+                                msg.what = MSG_PERIOD
+                                val objs: MutableList<Any> = ArrayList()
+                                objs.add((currentPeriod + 1).toString())
+                                e("currentPeriod", (currentPeriod + 1).toString())
                                 val postData = PostData(postLAccList, postGyrList, postMagList, postPressureList)
                                 val postDataJson = Gson().toJson(postData)
                                 objs.add(postDataJson)
                                 msg.obj = objs
+                                handler.sendMessage(msg)
                             }
-                            handler.sendMessage(msg)
+
                         }
                     }
                 }
                 if (mTimer != null && mTimerTask != null) {
-                    mTimer!!.schedule(mTimerTask, (1000 * edtWindowSize42.text.toString().toFloat()).toLong(), (1000 * edtWindowSize42.text.toString().toFloat()).toLong())
+                    mTimer!!.schedule(mTimerTask, (1000 * 10).toLong(), (1000 * 10).toLong())
                 }
             } else {//停止预测
                 stopPredict()
@@ -414,7 +425,7 @@ class FourTwoActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
                 if (mDataTimer != null && mDataTimerTask != null) {
-                    mDataTimer!!.schedule(mDataTimerTask, 0, 5)
+                    mDataTimer!!.schedule(mDataTimerTask, 10, 10)
                 }
             } else {//关闭数据采集
                 stopSensor(mSensorManager!!, mLAccSensor, mGyrSensor, mMagSensor, mPressureSensor)

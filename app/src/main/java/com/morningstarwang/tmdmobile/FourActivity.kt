@@ -13,18 +13,16 @@ import android.support.v7.widget.GridLayout
 import android.util.Log.e
 import android.widget.TextView
 import com.google.gson.Gson
-import com.morningstarwang.tmdmobile.api.PostService
+import com.morningstarwang.tmdmobile.api.PredictService
 import com.morningstarwang.tmdmobile.pojo.PostData
 import com.morningstarwang.tmdmobile.pojo.ThreeAxesData
 import com.morningstarwang.tmdmobile.utils.SpeechUtils
 import kotlinx.android.synthetic.main.activity_four.*
-import kotlinx.android.synthetic.main.activity_main.*
 import kr.co.namee.permissiongen.PermissionFail
 import kr.co.namee.permissiongen.PermissionGen
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
-import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.sdk25.coroutines.onClick
 import org.jetbrains.anko.startActivity
 import org.jetbrains.anko.toast
@@ -77,7 +75,7 @@ class FourActivity : AppCompatActivity(), SensorEventListener {
                         val retrofit = Retrofit.Builder()
                                 .baseUrl("http://101.200.54.20:5000/")
                                 .build()
-                        val service = retrofit.create(PostService::class.java)
+                        val service = retrofit.create(PredictService::class.java)
                         val body = RequestBody.create(MediaType.parse("application/json"), postDataJson)
                         val call = service.predict4(body)
                         call.enqueue(object : retrofit2.Callback<ResponseBody> {
@@ -165,7 +163,7 @@ class FourActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_four)
-        title = "4-Mode-Detection"
+//        title = "4-Mode-Detection"
         requestPermission()
         initActionBar()
         wakeLocker()
