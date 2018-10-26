@@ -1,125 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="5dp">
 
     <LinearLayout
+        android:id="@+id/linearLayout6"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="27dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <RadioGroup
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
-
-            <RadioButton
-                android:id="@+id/rbStill"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Still" />
-
-            <RadioButton
-                android:id="@+id/rbWalk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Walk" />
-
-            <RadioButton
-                android:id="@+id/rbRun"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Run" />
-
-            <RadioButton
-                android:id="@+id/rbBike"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Bike" />
-
-            <RadioButton
-                android:id="@+id/rbCar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Car" />
-
-            <RadioButton
-                android:id="@+id/rbBus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Bus" />
-
-            <RadioButton
-                android:id="@+id/rbTrain"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Train" />
-
-            <RadioButton
-                android:id="@+id/rbSubway"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Subway" />
-        </RadioGroup>
-
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dp"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:text="App状态：" />
 
-            <android.support.v7.widget.GridLayout
-                android:id="@+id/glConfusionMatrix"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_margin="20dp"
-                app:columnCount="8"
-                app:rowCount="8">
-            </android.support.v7.widget.GridLayout>
-            <LinearLayout
-                android:layout_margin="20dp"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-                <TextView
-                    android:text="Accuracy:"
-                    android:textColor="#000000"
-                    android:layout_weight="1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content" />
-                <TextView
-                    android:textColor="#000000"
-                    android:id="@+id/tvAccuracy"
-                    android:text="0%"
-                    android:layout_weight="1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="未知" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="分类模式：" />
+
+        <TextView
+            android:id="@+id/tvClassMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="八分类4.5s"
+            android:textColor="@color/colorFail" />
+
+        <Switch
+            android:id="@+id/swStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="是否在线"
+            android:visibility="invisible" />
     </LinearLayout>
 
-    <LinearLayout
+    <FrameLayout
+        android:id="@+id/flModeFragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:orientation="horizontal">
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout6"></FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/flModeFragmentContainer">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Predict every "
+            android:text="识别用时"
             android:textColor="@color/colorPrimaryDark" />
 
         <EditText
@@ -131,13 +85,13 @@
             android:enabled="false"
             android:gravity="center_horizontal"
             android:inputType="numberDecimal"
-            android:text="4.5" />
+            android:text="N/A" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="second(s)"
+            android:text="秒"
             android:textColor="@color/colorPrimaryDark" />
     </LinearLayout>
 
@@ -146,24 +100,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Data Collection" />
+        android:text="数据采集"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout5" />
 
     <Switch
         android:id="@+id/swModeDetection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mode Detection" />
+        android:text="模式识别"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/swDataCollection" />
 
     <LinearLayout
+        android:id="@+id/linearLayout4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/swModeDetection">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Last Time Predict Result:"
+            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
+            android:text="上一次识别结果："
             android:textStyle="bold" />
 
         <TextView
@@ -177,16 +142,20 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/linearLayout3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout4">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:layout_marginStart="10dp"
-            android:text="Current Predict Period: "
+            android:text="当前识别次数："
             android:textStyle="bold" />
 
         <TextView
@@ -196,14 +165,131 @@
             android:text="0"
             android:textStyle="bold" />
     </LinearLayout>
-    <Button
-        android:id="@+id/btn_switch_to_4"
-        android:layout_margin="10dp"
-        android:background="@drawable/bg_btn"
-        android:textColor="#ffffff"
-        android:textSize="10sp"
-        android:text="Switch to 4-mode-detection->"
-        android:layout_width="match_parent"
-        android:layout_height="32sp" />
 
-</LinearLayout>
+    <HorizontalScrollView
+        android:id="@+id/horizontalScrollView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_color_light"
+                    android:enabled="false"
+                    android:text="八分类4.5s(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_color_light"
+                    android:enabled="false"
+                    android:text="八分类4.5s(无气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_color_light"
+                    android:enabled="false"
+                    android:text="四分类4.5s(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_color_light"
+                    android:enabled="false"
+                    android:text="四分类2min(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_switch_to_8_450"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn"
+                    android:text="八分类4.5s(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btn_switch_to_8_450_pf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn"
+                    android:text="八分类4.5s(无气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btn_switch_to_4_450"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn"
+                    android:text="四分类4.5s(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btn_switch_to_4_12000"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn"
+                    android:text="四分类2min(有气压)"
+                    android:textColor="#ffffff"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+    </HorizontalScrollView>
+
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:ellipsize="marquee"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="获取更多信息，请访问blog.morningstarwang.com"
+        android:textSize="10sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</android.support.constraint.ConstraintLayout>

@@ -1,4 +1,4 @@
-package com.morningstarwang.tmdmobile
+package com.morningstarwang.tmdmobile.activity
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.app.AlertDialog
 import android.util.Log.e
 import com.google.gson.Gson
+import com.morningstarwang.tmdmobile.R
 import com.morningstarwang.tmdmobile.pojo.UpdateData
 import kotlinx.android.synthetic.main.activity_splash.*
 import kr.co.namee.permissiongen.PermissionFail
@@ -23,11 +24,14 @@ import java.net.URL
 
 class SplashActivity : AppCompatActivity() {
     companion object {
+        var isOnline = true
         const val MSG_OK = 0x1
         const val MSG_CHECK_AGAIN = 0x2
-        const val versionCode = 2
+        const val versionCode = 4
         const val update_url = "https://raw.githubusercontent.com/morningstarwang/releases/master/android/ict/tmd/update.json"
     }
+
+    var failCount = 0
 
     inline fun <reified T : Any> Gson.fromJson(json: String): T {
         return Gson().fromJson(json, T::class.java)
@@ -39,10 +43,12 @@ class SplashActivity : AppCompatActivity() {
             super.handleMessage(msg)
             when (msg?.what) {
                 MSG_OK -> {
-                    startActivity<FourTwoActivity>()
+                    requestPermission()
+                    startActivity<MainActivity>()
                     finish()
                 }
                 MSG_CHECK_AGAIN -> {
+                    failCount += 1
                     checkUpdate()
                 }
             }
@@ -55,7 +61,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
         initActionBar()
-        requestPermission()
+
 //        val builder = StrictMode.VmPolicy.Builder()
 //        StrictMode.setVmPolicy(builder.build())
 //        builder.detectFileUriExposure()
@@ -66,29 +72,42 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun checkUpdate() {
-        tvTip.text = "Checking Internet Connection..."
+        tvTip.text = "正在与服务器通信..."
         doAsync {
             val updateData = getUpdateData(update_url)
             if (updateData == null) {
                 uiThread {
-                    toast("Network is unavailable, check your network settings.")
-                    handler.sendEmptyMessageDelayed(MSG_CHECK_AGAIN, 5000)
+                    if(failCount<3){
+                        isOnline = false
+                        toast("网络连接不可用，请检查您的网络设置。（三次失败后将进入离线模式）")
+                        handler.sendEmptyMessageDelayed(MSG_CHECK_AGAIN, 5000)
+                    }else{
+                        handler.sendEmptyMessage(MSG_OK)
+                    }
                 }
+            }else{
+                isOnline = true
             }
             uiThread {
-                tvTip.text = "Checking For Updating..."
+                tvTip.text = "正在验证软件版本..."
             }
             if (updateData?.versionCode!! > versionCode) {//有更新
                 activityUiThreadWithContext { f ->
+                    requestPermission()
                     val mDialog = AlertDialog.Builder(f)
-                    mDialog.setTitle("Software Update")
-                            .setMessage("We have done the following:\n" + updateData.description)
+                    mDialog.setTitle("软件更新")
+                            .setMessage("我们做了如下工作：\n" + updateData.description)
                             .setCancelable(false)
-                            .setPositiveButton("Update Now", DialogInterface.OnClickListener { dialog, which ->
-                                tvTip.text = "Downloading APK..."
+                            .setPositiveButton("立即更新", DialogInterface.OnClickListener { dialog, which ->
+                                tvTip.text = "正在下载APK，请稍候..."
                                 if (!getAPK(updateData.url)) {
-                                    toast("Network is unavailable, check your network settings.")
-                                    handler.sendEmptyMessageDelayed(MSG_CHECK_AGAIN, 5000)
+                                    if(failCount<=3){
+                                        isOnline = false
+                                        toast("网络连接不可用，请检查您的网络设置。（三次失败后将进入离线模式）")
+                                        handler.sendEmptyMessageDelayed(MSG_CHECK_AGAIN, 5000)
+                                    }else{
+                                        handler.sendEmptyMessage(MSG_OK)
+                                    }
                                 }
                             })
                             .create().show()
@@ -165,7 +184,7 @@ class SplashActivity : AppCompatActivity() {
 
     @PermissionFail(requestCode = 100)
     fun permissionDenied() {
-        toast("App needs the permission to run normally")
+        toast("App需要此权限才能正常运行！")
         requestPermission()
     }
 

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:layout_height="250dp"
+    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    tools:context=".fragment.EightMode450Fragment"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RadioGroup
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_width="0dp">
+
+        <RadioButton
+            android:id="@+id/rbStill"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="静止" />
+
+        <RadioButton
+            android:id="@+id/rbWalk"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="步行" />
+
+        <RadioButton
+            android:id="@+id/rbRun"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="跑步" />
+
+        <RadioButton
+            android:id="@+id/rbBike"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="自行车" />
+
+        <RadioButton
+            android:id="@+id/rbCar"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="汽车" />
+
+        <RadioButton
+            android:id="@+id/rbBus"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="公交车" />
+
+        <RadioButton
+            android:id="@+id/rbTrain"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="普通火车" />
+
+        <RadioButton
+            android:id="@+id/rbSubway"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:text="地铁" />
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:orientation="vertical">
+
+        <android.support.v7.widget.GridLayout
+            android:id="@+id/glConfusionMatrix"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            app:columnCount="8"
+            app:rowCount="8"></android.support.v7.widget.GridLayout>
+
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_margin="20dp"
+            android:layout_width="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:text="准确度:"
+                android:textColor="#000000" />
+
+            <TextView
+                android:id="@+id/tvAccuracy"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:text="0%"
+                android:textColor="#000000" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
